@@ -28,6 +28,13 @@ jobs:
     - name: Build and Test
       run: ./Build.ps1
       shell: pwsh
+    - name: Test Report
+      uses: dorny/test-reporter@v2
+      if: always()
+      with:
+        name: Test Report
+        path: artifacts/*.trx
+        reporter: dotnet-trx
     - name: Push to MyGet
       env:
         NUGET_URL: https://www.myget.org/F/respawn-ci/api/v3/index.json
