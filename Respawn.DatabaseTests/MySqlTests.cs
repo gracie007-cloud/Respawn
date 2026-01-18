@@ -19,7 +19,7 @@ namespace Respawn.DatabaseTests
             public int Value { get; set; }
         }
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldDeleteData()
         {
             using var db = await fixture.CreateDatabaseAsync();
@@ -40,7 +40,7 @@ namespace Respawn.DatabaseTests
             db.ExecuteScalar<int>("SELECT COUNT(1) FROM Foo").ShouldBe(0);
         }
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldDeleteDataWithRelationships()
         {
             using var db = await fixture.CreateDatabaseAsync();
@@ -101,7 +101,7 @@ CREATE TABLE `Bar` (
             db.ExecuteScalar<int>("SELECT COUNT(1) FROM Bob").ShouldBe(0);
         }
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldHandleSelfRelationships()
         {
             using var db = await fixture.CreateDatabaseAsync();
@@ -135,7 +135,7 @@ CREATE TABLE `Bar` (
         }
 
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldHandleCircularRelationships()
         {
             using var db = await fixture.CreateDatabaseAsync();
@@ -167,7 +167,7 @@ CREATE TABLE `Bar` (
             db.ExecuteScalar<int>("SELECT COUNT(1) FROM child").ShouldBe(0);
         }
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldHandleComplexCycles()
         {
             using var db = await fixture.CreateDatabaseAsync();
@@ -225,7 +225,7 @@ CREATE TABLE `Bar` (
             db.ExecuteScalar<int>("SELECT COUNT(1) FROM f").ShouldBe(0);
         }
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldIgnoreTables()
         {
             using var db = await fixture.CreateDatabaseAsync();
@@ -249,7 +249,7 @@ CREATE TABLE `Bar` (
             db.ExecuteScalar<int>("SELECT COUNT(1) FROM Bar").ShouldBe(0);
         }
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldIncludeTables()
         {
             using var db = await fixture.CreateDatabaseAsync();
@@ -273,7 +273,7 @@ CREATE TABLE `Bar` (
             db.ExecuteScalar<int>("SELECT COUNT(1) FROM Bar").ShouldBe(100);
         }
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldExcludeSchemas()
         {
             using var db = await fixture.CreateDatabaseAsync();
@@ -303,7 +303,7 @@ CREATE TABLE `Bar` (
             db.ExecuteScalar<int>("SELECT COUNT(1) FROM B.Bar").ShouldBe(0);
         }
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldIncludeSchemas()
         {
             using var db = await fixture.CreateDatabaseAsync();
@@ -333,7 +333,7 @@ CREATE TABLE `Bar` (
             db.ExecuteScalar<int>("SELECT COUNT(1) FROM B.Bar").ShouldBe(0);
         }
 
-        [SkipOnCI]
+        [Fact]
         public async Task ShouldResetSequencesAndIdentities()
         {
             using var db = await fixture.CreateDatabaseAsync();
