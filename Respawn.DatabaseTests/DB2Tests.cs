@@ -1,50 +1,21 @@
 ﻿using Shouldly;
 using System;
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Images;
 using IBM.Data.Db2;
 using NPoco;
 using Respawn.Graph;
-using Testcontainers.Db2;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Respawn.DatabaseTests
 {
-    public class DB2Tests : IAsyncLifetime
+    public class DB2Tests(ITestOutputHelper output, DB2Fixture fixture) : IAsyncLifetime, IClassFixture<DB2Fixture>
     {
-        private Db2Container _sqlContainer;
         private DB2Connection _connection;
-        private readonly ITestOutputHelper _output;
 
-        public DB2Tests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
+        public async Task InitializeAsync() => _connection = (DB2Connection)await fixture.OpenConnectionAsync();
 
-        public async Task InitializeAsync()
-        {
-            _sqlContainer = new Db2Builder()
-                .WithAcceptLicenseAgreement(true)
-                .Build();
-            await _sqlContainer.StartAsync();
-            
-            _connection = new DB2Connection(_sqlContainer.GetConnectionString());
-
-            await _connection.OpenAsync();
-        }
-
-        public async Task DisposeAsync()
-        {
-            _connection?.Close();
-            _connection?.Dispose();
-            _connection = null;
-
-            await _sqlContainer.StopAsync();
-            await _sqlContainer.DisposeAsync();
-            _sqlContainer = null;
-        }
+        public async Task DisposeAsync() => await _connection.DisposeAsync();
 
         [SkipOnCI]
         public async Task ShouldDeleteData()
@@ -151,7 +122,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -221,7 +192,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -275,7 +246,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -359,7 +330,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -429,7 +400,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -489,7 +460,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 

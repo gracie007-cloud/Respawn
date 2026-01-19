@@ -30,6 +30,6 @@ exec { & dotnet clean --configuration Release }
 
 exec { & dotnet build --configuration Release }
 
-exec { & dotnet test --configuration Release --results-directory $artifacts --no-build --logger trx --verbosity=normal }
+exec { & dotnet test --configuration Release --results-directory $artifacts --no-build --verbosity=normal }
 
 exec { & dotnet pack .\Respawn\Respawn.csproj --configuration Release --output $artifacts --no-build }
