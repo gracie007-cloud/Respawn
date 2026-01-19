@@ -23,7 +23,7 @@ namespace Respawn.DatabaseTests
 
         public async Task InitializeAsync()
         {
-            _msSqlContainer = new MsSqlBuilder().Build();
+            _msSqlContainer = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-CU23-ubuntu-22.04").Build();
             await _msSqlContainer.StartAsync();
             
             var connString = _msSqlContainer.GetConnectionString();

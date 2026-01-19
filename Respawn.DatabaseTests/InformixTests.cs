@@ -1,14 +1,6 @@
-﻿//#if INFORMIX
-using Respawn;
-using Shouldly;
+﻿using Shouldly;
 using System;
-using System.Data;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Configurations;
-using DotNet.Testcontainers.Containers;
 using IBM.Data.Db2;
 using NPoco;
 using Respawn.Graph;
@@ -17,118 +9,22 @@ using Xunit.Abstractions;
 
 namespace Respawn.DatabaseTests
 {
-    public class InformixTests : IAsyncLifetime
+    public class InformixTests(ITestOutputHelper output, InformixFixture fixture) : IAsyncLifetime, IClassFixture<InformixFixture>
     {
         private DB2Connection _connection;
-        private readonly ITestOutputHelper _output;
-        private string _databaseName;
-        private IContainer _sqlContainer;
-
-        public InformixTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
-        public async Task DisposeAsync()
-        {
-            _connection?.Close();
-            _connection?.Dispose();
-            _connection = null;
-            
-            await _sqlContainer.StopAsync();
-            await _sqlContainer.DisposeAsync();
-            _sqlContainer = null;
-        }
 
         public async Task InitializeAsync()
         {
-            //const string connString = "Server=127.0.0.1:9089;Database=sysadmin;UID=informix;PWD=in4mix;Persist Security Info=True;Authentication=Server;";
+            var databaseName = $"dummyifx_{Guid.NewGuid():N}";
+            var createDbCommand = fixture.CreateCommand($"CREATE DATABASE {databaseName} WITH BUFFERED LOG");
+            await createDbCommand.ExecuteNonQueryAsync();
 
-            _sqlContainer = new ContainerBuilder()
-                .WithImage("ibmcom/informix-developer-database:14.10.FC5DE")
-
-                // = environment:
-                .WithEnvironment("LICENSE", "accept")
-                .WithEnvironment("ONCONFIG_FILE", "onconfig")
-                .WithEnvironment("RUN_FILE_PRE_INIT", "my_post.sh")
-
-                // = ports:
-                .WithPortBinding(9088, 9088)
-                .WithPortBinding(9089, 9089)
-                .WithPortBinding(27017, 27017)
-                .WithPortBinding(27018, 27018)
-                .WithPortBinding(27883, 27883)
-
-                // = volumes:
-                .WithBindMount(
-                    source: Path.GetFullPath("./informix-server"),
-                    destination: "/opt/ibm/config",
-                    AccessMode.ReadWrite)
-
-                // = privileged: true
-                .WithPrivileged(true)
-
-                // = user: root
-                //.WithUser("root")
-
-                // = tty: true
-                //.WithTty(true)
-
-                // optional: equivalent to "restart: always" but Testcontainers 
-                // does not automatically restart containers (it recreates instead)
-                // .WithAutoRemove(false)
-
-                .WithWaitStrategy(Wait.ForUnixContainer()
-                    .UntilExternalTcpPortIsAvailable(9088)
-                    .UntilExternalTcpPortIsAvailable(9089)
-                    .UntilInternalTcpPortIsAvailable(9088)
-                    .UntilInternalTcpPortIsAvailable(9089)
-                    // This is the last success message
-                    .UntilMessageIsLogged("starting mqtt listener on port 27883")
-                )
-                .Build();
-
-            await _sqlContainer.StartAsync();
-
-            var connString = GetConnectionString(_sqlContainer);
-            
-            await using (var connection = new DB2Connection(connString))
-            {
-                await connection.OpenAsync();
-                
-                using var database = new Database(connection);
-
-                _databaseName = $"dummyifx_{Guid.NewGuid():N}";
-
-                await database.ExecuteAsync($"CREATE DATABASE {_databaseName} WITH BUFFERED LOG;");
-            }
-
-            var testDbConnString = new DB2ConnectionStringBuilder(connString)
-            {
-                Database = _databaseName
-            }.ToString();
-
-            _connection = new DB2Connection(testDbConnString);
-
+            var connectionString = new DB2ConnectionStringBuilder(fixture.ConnectionString) { Database = databaseName }.ConnectionString;
+            _connection = new DB2Connection(connectionString);
             await _connection.OpenAsync();
         }
 
-        private static string GetConnectionString(
-            IContainer container,
-            string database = "sysadmin",
-            string user = "informix",
-            string password = "in4mix")
-        {
-            var host = container.Hostname;
-            var port = container.GetMappedPublicPort(9089);  // SQL port
-
-            return
-                $"Server={host}:{port};" +
-                $"Database={database};" +
-                $"UID={user};" +
-                $"Password={password};" +
-                $"Persist Security Info=True;Authentication=Server;";
-        }
+        public async Task DisposeAsync() => await _connection.DisposeAsync();
 
         [SkipOnCI]
         public async Task ShouldDeleteData()
@@ -222,7 +118,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -284,7 +180,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -331,7 +227,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -410,7 +306,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -461,7 +357,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -504,7 +400,7 @@ namespace Respawn.DatabaseTests
             }
             catch
             {
-                _output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
+                output.WriteLine(checkPoint.DeleteSql ?? string.Empty);
                 throw;
             }
 
@@ -516,11 +412,7 @@ namespace Respawn.DatabaseTests
 
         private async Task ManageUser(string userName)
         {
-            await using var connection = new DB2Connection($"Server=127.0.0.1:9089;Database={_databaseName};UID=informix;PWD=in4mix;Persist Security Info=True;Authentication=Server;");
-            await connection.OpenAsync();
-
-            //await using var allUsers = new DB2Command("SELECT username FROM sysusers", connection);
-            var database = new Database(connection);
+            var database = new Database(_connection);
 
             await database.ExecuteAsync($"DROP USER {userName};");
             await database.ExecuteAsync($"CREATE USER {userName} WITH PROPERTIES USER ifxsurr;");

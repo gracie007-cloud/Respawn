@@ -39,8 +39,7 @@ namespace Respawn.DatabaseTests
             _createdUser = Guid.NewGuid().ToString().Substring(0, 8);
 
             
-            _sqlContainer = new OracleBuilder()
-                .WithImage("gvenzl/oracle-xe:21.3.0-slim-faststart")
+            _sqlContainer = new OracleBuilder("gvenzl/oracle-free:23-slim-faststart")
                 .WithUsername(_createdUser)
                 .Build();
             await _sqlContainer.StartAsync();
